@@ -32,7 +32,7 @@ class TypingTestGUI:
 
         self.start_time = time.time()
 
-        self.status_label = tk.Label(master, text="Start typing...")
+        self.status_label = tk.Label(master, text="Start typing")
         self.status_label.pack()
 
     def on_key_press(self, event=None):
