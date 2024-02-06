@@ -11,11 +11,11 @@ class UsernameInputApp(App):
     def build(self):
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
 
-        label = Label(text=f"Enter your username", size_hint=(1, None), height=50, halign="center", valign="top")
+        label = Label(text=f"Hello {config.USERNAME}", size_hint=(1, None), height=50, halign="center", valign="top")
         label.bind(size=label.setter('text_size'))  # Bind size to automatically adjust text wrapping
         label.font_size = '20sp'  # Increase font size
 
-        current_name_label = Label(text=f"(current name is: {config.DEFAULT_USERNAME})", size_hint=(1, None), height=50,
+        current_name_label = Label(text=f"Provide new username if you want to change your name - minimal length is 3", size_hint=(1, None), height=50,
                                    halign="center", valign="middle")
         current_name_label.bind(size=current_name_label.setter('text_size'))
         current_name_label.font_size = '12sp'  # Increase font size

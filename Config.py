@@ -6,7 +6,7 @@ from hashlib import sha256
 from logging import ERROR, DEBUG
 from logger import Logger
 from dacite import from_dict
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass, fields
 from json import dump, load
 
 
@@ -22,7 +22,8 @@ class Config:
     FONT_FAMILY: str = "Century"
     WIDTH: int = 600
     HEIGHT: int = 300
-    DEFAULT_USERNAME: str = getlogin()+'_'+sha256(str(getnode()).encode()).hexdigest()
+    USERNAME: str = getlogin() + '_' + sha256(str(getnode()).encode()).hexdigest()
+    DEFAULT_USERNAME = getlogin() + '_' + sha256(str(getnode()).encode()).hexdigest()
 
     def save_to_json(self):
         self.LOGGER.info('Configuration saved to file')
