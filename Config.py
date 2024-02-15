@@ -12,6 +12,7 @@ from json import dump, load
 
 @dataclass
 class Config:
+    SERVER_ADDRESS = 'http://srv22.mikr.us:20304/typingtest/'
     ROOT_PATH = Path(__file__).parent
     SOURCE_PATH = ROOT_PATH / 'src'
     CONFIG_FILE_PATH = SOURCE_PATH / 'config.json'
@@ -24,12 +25,13 @@ class Config:
     HEIGHT: int = 300
     USERNAME: str = getlogin() + '_' + sha256(str(getnode()).encode()).hexdigest()
     DEFAULT_USERNAME = getlogin() + '_' + sha256(str(getnode()).encode()).hexdigest()
+    GDPR_CLAUSE = SOURCE_PATH / 'gdpr.txt'
 
     def save_to_json(self):
-        self.LOGGER.info('Configuration saved to file')
         data = {f.name: getattr(self, f.name) for f in fields(self)}
-        with open(self.CONFIG_FILE_PATH, 'w') as f:
+        with open(self.CONFIG_FILE_PATH, 'w+') as f:
             dump(data, f, ensure_ascii=False, indent=4)
+        self.LOGGER.info(f'Configuration saved to file {self.CONFIG_FILE_PATH}')
 
 
 config = Config()

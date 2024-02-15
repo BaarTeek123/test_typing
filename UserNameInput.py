@@ -38,7 +38,7 @@ class UsernameInputApp(App):
 
     def submit_username(self, instance):
         self.username = self.username_input.text.strip()
-        self.stop()  # Close the username collection window
+        self.stop()
 
     def on_focus(self, instance, value):
         if value:  # When the text input is focused, ensure text is properly aligned

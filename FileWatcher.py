@@ -4,15 +4,20 @@ from time import sleep
 
 from requests import post
 from os import listdir, remove
+from json import load
 
 from Config import config
 
 
 class FileWatcher:
-    def __init__(self, api_url, directory_path):
+    def __init__(self, api_url, directory_path, headers=None):
+        if headers is None:
+            headers = {"Content-Type": "application/json"}
         self.api_url = api_url
+        self.headers = headers
         self.directory_path = directory_path
         self.thread = threading.Thread(target=self.run, daemon=True)
+
 
     def start(self):
         self.thread.start()
@@ -27,10 +32,14 @@ class FileWatcher:
 
                 for filename in filenames:
                     config.LOGGER.debug(f"Processing {join(self.directory_path, filename)}")
+
                     file_path = join(self.directory_path, filename)
                     if isfile(file_path):
-                        # Implement your API communication logic here
-                        response = post(self.api_url, files={'file': open(file_path, 'rb')})
+                        with open(file_path, 'r') as file:
+                            payload = load(file)
+
+                        response = post(self.api_url, headers=self.headers, json=payload)
+
                         if response.status_code == 200:  # Assuming 200 means success and file can be deleted
                             remove(file_path)
                             config.LOGGER.debug(f"File {filename} processed and removed.")
