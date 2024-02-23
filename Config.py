@@ -35,7 +35,8 @@ class Config:
     FONT_FAMILY: str = "Century"
     WIDTH: int = 1000
     HEIGHT: int = 600
-    USERNAME: str = getlogin() + '_' + sha256(str(getnode()).encode()).hexdigest()
+    POPUP_SIZE = (500, 400)
+    USERNAME: str = getlogin()
     AGE: int = 20
     LANGUAGE_LEVEL: str = EnglishLanguageLevel.NA.value
     DEFAULT_USERNAME: str = str(uuid4())

@@ -7,6 +7,8 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.widget import Widget
+
 from kivy.config import Config as KivyConfig
 
 from Config import config, EnglishLanguageLevel
@@ -80,36 +82,45 @@ class UserInformationApp(App):
             values=language_levels,
             size_hint=(1, None),
             height=50,
-            font_size='18sp'
+            font_size='18sp',
+            background_color=(0.357, 0.808, 0.980, 1)
         )
 
         skip_button = Button(
             text="Skip Update",
-            size_hint=(1, None),
+            size_hint=(0.5, 1),
             height=50,
             font_size='18sp',
-            on_press=self.skip_update
+            on_press=self.skip_update,
+            # background_color=(0, 0.5, 0.5, 1)
         )
 
         # Submit button
         submit_button = Button(
             text="Update Information",
-            size_hint=(1, None),
+            size_hint=(0.5, 1),
             height=50,
             font_size='18sp',
-            on_press=self.attempt_submit
+            on_press=self.attempt_submit,
+            background_color=(0.314, 0.784, 0.471, 1)
+
         )
 
-        for widget in [welcome_label, instruction_part1, instruction_part2, self.username_input,
-                       self.language_level_spinner, self.age_input, submit_button, skip_button]:
+
+        buttons_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, None), height=50)
+        buttons_layout.add_widget(skip_button)
+        buttons_layout.add_widget(submit_button)
+
+        for widget in [welcome_label, instruction_part1, instruction_part2, Widget(size_hint_y=0.05) , self.username_input, self.age_input,
+                       self.language_level_spinner, Widget(size_hint_y=0.05), buttons_layout]:
             main_layout.add_widget(widget)
 
         return main_layout
 
     def skip_update(self, instance):
-        self.show_popup("Configuration", "No changes made. Displaying current configuration.")
-        self.stop()
-
+        self.show_popup("Configuration", f"No changes made. \nUsername: [color=5bcefa]{config.USERNAME}[/color]"
+                                         f"\nAge: [color=5bcefa]{config.AGE}[/color]\n"
+                                         f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]", if_close=True)
     def submit_user(self, instance=None):
         self.username = self.username_input.text.strip()
         self.age = self.age_input.text.strip()
@@ -121,9 +132,11 @@ class UserInformationApp(App):
             config.AGE = self._parse_age(self.age)
             config.DEFAULT_USERNAME = str(uuid4())
             config.save_to_json()
-        self.show_popup("Configuration", f"Your information has been updated successfully"
-                                         f"\n\nUsername: {self.username}\nAge: {self.age}\nLanguage Level: {self.language_level}")
-        self.stop()
+            self.show_popup("Configuration", f"Your information has been updated successfully. \nUsername: [color=5bcefa]{config.USERNAME}[/color]"
+                                         f"\nAge: [color=5bcefa]{config.AGE}[/color]\n"
+                                         f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]", if_close=True)
+        self.skip_update(None)
+
 
     @staticmethod
     def _parse_language_level(input_str):
@@ -175,13 +188,16 @@ class UserInformationApp(App):
         else:
             self.submit_user()
 
-    @staticmethod
-    def show_popup(title, message):
+
+    def show_popup(self, title, message, if_close = False):
         content = BoxLayout(orientation='vertical', spacing=10)
         content.add_widget(Label(text=message, font_size='18sp', markup=True))
         close_btn = Button(text='Close', size_hint=(1, None), height=50)
-        popup = Popup(title=title, content=content, size_hint=(None, None), size=(400, 200))
-        close_btn.bind(on_press=popup.dismiss)
+        popup = Popup(title=title, content=content, size_hint=(None, None), size=config.POPUP_SIZE)
+        if if_close:
+            close_btn.bind(on_press=self.stop)
+        else:
+            close_btn.bind(on_press=popup.dismiss)
         content.add_widget(close_btn)
         popup.open()
 
