@@ -1,6 +1,7 @@
 import json
 import time
 from datetime import datetime
+from uuid import uuid4
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -14,9 +15,9 @@ from kivy.uix.textinput import TextInput
 
 from Config import config
 from FileWatcher import FileWatcher
-from InitialPrompt import InitialPromptApp
+from InitialPrompt import GDPRClause
 from RealTimeListener import RealTimeKeyListener
-from UserNameInput import UsernameInputApp
+from UserNameInput import UserInformationApp
 from utils import generate_sentence, NoPasteTextInput
 
 KivyConfig.set('graphics', 'width', config.WIDTH)
@@ -39,10 +40,12 @@ class TypingTestApp(App):
         self.sentence_label = None
         self.app_gathered_characters = []
         self.popup = None
+        self.last_interaction_time = None
 
     def build(self):
         """Builds the application layout."""
         self.start_time = time.time()
+        self.last_interaction_time = time.time()
         self.target_sentence = self._generate_new_sentence()
         self.key_listener = RealTimeKeyListener()
         self.root = self._create_layout()
@@ -86,11 +89,14 @@ class TypingTestApp(App):
 
     def on_input_text_change(self, instance, value):
         """Handles text changes in the input_text widget."""
-        if len(self.app_gathered_characters) == len(self.target_sentence.replace(" ", "")):
+        # update last interaction
+        self.last_interaction_time = time.time()
+        if len(value.strip()) == len(self.target_sentence):
             self._ask_confirmation(value)
 
     def _submit(self, instance):
         """Handles submit button press."""
+        self.last_interaction_time = time.time()
         self._ask_confirmation(self.input_text.text.strip())
 
     def _ask_confirmation(self, input_sentence, quit=False):
@@ -129,9 +135,9 @@ class TypingTestApp(App):
             "user": self.username,
             "original_sentence": self.target_sentence,
             "input_sentence": input_sentence,
-            "typed_sentence": self.key_listener.get_sentence(),
-            "typed_characters": self.key_listener.get_pressed_keys(),
-            "elapsed_time": elapsed_time,
+            "logger_sentence": self.key_listener.get_sentence(),
+            "logger_keys": self.key_listener.get_pressed_keys(),
+            'elapsed_time': float(elapsed_time)
         }
         self._write_results_to_file(results)
         self._show_results(self._calculate_metrics(input_sentence))
@@ -149,9 +155,9 @@ class TypingTestApp(App):
     def _write_results_to_file(self, result: dict) -> None:
         """Writes the results to a file."""
         try:
-            with open(config.OUT_PATH / f"{config.USERNAME}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json",
-                      mode='w+') as f:
-                json.dump(result, f)
+            if len(result['input_sentence'].strip()) > len(self.target_sentence) // 3:
+                with open(config.OUT_PATH / f"{config.USERNAME}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json", mode='w+') as f:
+                    json.dump(result, f)
         except IOError as e:
             config.LOGGER.error(f"File write error: {e}")
 
@@ -166,6 +172,7 @@ class TypingTestApp(App):
         """Resets the test for a new attempt."""
         # Implementation for resetting the test
         self.start_time = time.time()
+        self.last_interaction_time = time.time()
         self.target_sentence = self._generate_new_sentence()
         self.sentence_label.text = self.target_sentence
         self.input_text.text = ""
@@ -175,7 +182,7 @@ class TypingTestApp(App):
 
     def _check_time_limit(self, dt):
         """Checks if the typing duration has exceeded 2 minutes."""
-        if time.time() - self.start_time > 120:  # 2 minutes in seconds
+        if time.time() - self.last_interaction_time > 180:
             self._reset_test_with_prompt()
 
     def _reset_test_with_prompt(self):
@@ -198,15 +205,12 @@ class TypingTestApp(App):
                 "total_words": "No text detected"
         }
         time_elapsed = time.time() - self.start_time
-        words_typed = len(input_sentence.split())
         total_words = len(self.target_sentence.split()) if input_sentence else None
         correct_chars = sum(1 for inp, target in zip(input_sentence, self.target_sentence) if inp == target) if input_sentence else None
         accuracy = (correct_chars / max(len(self.target_sentence), 1)) * 100
-        wpm = (words_typed / (time_elapsed / 60)) if time_elapsed > 0 else 0
 
         return {
             "accuracy": accuracy,
-            "words_per_minute": wpm,
             "time_elapsed": time_elapsed,
             "total_words": total_words
         }
@@ -228,17 +232,12 @@ if __name__ == '__main__':
     with open(config.GDPR_CLAUSE, mode='r', encoding='utf-8') as gdpr_clause:
         gdpr_clause = gdpr_clause.read()
 
-    initial_prompt_app = InitialPromptApp(gdpr_clause)
+    initial_prompt_app = GDPRClause(gdpr_clause)
     initial_prompt_app.run()
-    username_app = UsernameInputApp()
+    username_app = UserInformationApp()
     username_app.run()
 
-    if username_app.username != config.DEFAULT_USERNAME and len(username_app.username) > 2:
-        config.DEFAULT_USERNAME = username_app.username
-        config.save_to_json()
-
-    # typing_test_app = TypingTestApp(username=username_app.username)
+    typing_test_app = TypingTestApp(username=username_app.username)
     file_watcher = FileWatcher(config.SERVER_ADDRESS, config.OUT_PATH)
     file_watcher.start()
-    typing_test_app = TypingTestApp(username="Bartek")
     typing_test_app.run()

@@ -1,45 +1,191 @@
+from uuid import uuid4
+
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.popup import Popup
+from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.config import Config as KivyConfig
 
-from Config import config
+from Config import config, EnglishLanguageLevel
+
+KivyConfig.set('graphics', 'width', config.WIDTH)
+KivyConfig.set('graphics', 'height', config.HEIGHT)
+KivyConfig.write()
 
 
-class UsernameInputApp(App):
+class UserInformationApp(App):
+
+    def __init__(self):
+        super(UserInformationApp, self).__init__()
+        self.age_input = None
+        self.username_input = None
+        self.language_level_spinner = None
+        self.username = config.USERNAME
+        self.language_level = config.LANGUAGE_LEVEL
+        self.age = config.AGE
+
     def build(self):
-        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        self.title = 'User Information'
+        main_layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
 
-        label = Label(text=f"Hello {config.USERNAME}", size_hint=(1, None), height=50, halign="center", valign="top")
-        label.bind(size=label.setter('text_size'))  # Bind size to automatically adjust text wrapping
-        label.font_size = '20sp'  # Increase font size
+        # Labels with formatting and text wrapping
+        welcome_label = Label(
+            text=f"Hello [b][color=5bcefa]{self.username}[/color][/b]. \n"
+                 f"Your age is set to [b][color=5bcefa]{self.age}[/color][/b] and "
+                 f"language proficiency level is set to [b][color=5bcefa]{self.language_level}[/color][/b]",
+            size_hint=(1, None),
+            halign="center",
+            valign="top",
+            font_size='18sp',
+            markup=True
+        )
 
-        current_name_label = Label(text=f"Provide new username if you want to change your name - minimal length is 3", size_hint=(1, None), height=50,
-                                   halign="center", valign="middle")
-        current_name_label.bind(size=current_name_label.setter('text_size'))
-        current_name_label.font_size = '12sp'  # Increase font size
+        instruction_part1 = Label(text="Would you like to update your information?", height=50,
+                                  size_hint=(1, None), halign="center")
+        instruction_part1.font_size = '18sp'
 
-        # TextInput with centered text, increased font size, and confirming with Enter
-        self.username_input = TextInput(size_hint=(1, None), height=50, multiline=False, font_size='20sp',
-                                        halign='center')
-        self.username_input.bind(on_text_validate=self.submit_username)  # Confirm with Enter
-        self.username_input.bind(focus=self.on_focus)  # Adjust alignment when focused
+        instruction_part2 = Label(text="Remember! \nChanging it will treat you as a new user.", height=50,
+                                  size_hint=(1, None), halign="center", color=(1, 0, 0, 1))
+        instruction_part2.font_size = '18sp'
 
-        content.add_widget(label)
-        content.add_widget(current_name_label)
-        content.add_widget(self.username_input)
+        # Text inputs
+        self.username_input = TextInput(
+            size_hint=(1, None),
+            height=50,
+            multiline=False,
+            font_size='18sp',
+            halign='center',
+            hint_text="Enter new username (min. 3, max. 60 characters)"
+        )
+        self.username_input.bind(on_text_validate=self.limit_username_length)
 
-        submit_button = Button(text="Submit", size_hint=(1, None), height=50, font_size='20sp')
-        submit_button.bind(on_press=self.submit_username)
-        content.add_widget(submit_button)
+        self.age_input = TextInput(
+            size_hint=(1, None),
+            height=50,
+            multiline=False,
+            font_size='18sp',
+            halign="center",
+            input_filter=self.age_input_filter,
+            hint_text="Enter age"
+        )
+        self.age_input.bind(text=self.validate_age_input)
 
-        return content
+        # Spinner
+        language_levels = [level.value for level in EnglishLanguageLevel]
+        self.language_level_spinner = Spinner(
+            text='Select Language Level',
+            values=language_levels,
+            size_hint=(1, None),
+            height=50,
+            font_size='18sp'
+        )
 
-    def submit_username(self, instance):
-        self.username = self.username_input.text.strip()
+        skip_button = Button(
+            text="Skip Update",
+            size_hint=(1, None),
+            height=50,
+            font_size='18sp',
+            on_press=self.skip_update
+        )
+
+        # Submit button
+        submit_button = Button(
+            text="Update Information",
+            size_hint=(1, None),
+            height=50,
+            font_size='18sp',
+            on_press=self.attempt_submit
+        )
+
+        for widget in [welcome_label, instruction_part1, instruction_part2, self.username_input,
+                       self.language_level_spinner, self.age_input, submit_button, skip_button]:
+            main_layout.add_widget(widget)
+
+        return main_layout
+
+    def skip_update(self, instance):
+        self.show_popup("Configuration", "No changes made. Displaying current configuration.")
         self.stop()
 
-    def on_focus(self, instance, value):
-        if value:  # When the text input is focused, ensure text is properly aligned
-            instance.do_cursor_movement('cursor_home')
+    def submit_user(self, instance=None):
+        self.username = self.username_input.text.strip()
+        self.age = self.age_input.text.strip()
+        self.language_level = self.language_level_spinner.text
+
+        if len(self.username) >= 3 and len(self.age) > 0:
+            config.LANGUAGE_LEVEL = self._parse_language_level(self.language_level)
+            config.USERNAME = self.username
+            config.AGE = self._parse_age(self.age)
+            config.DEFAULT_USERNAME = str(uuid4())
+            config.save_to_json()
+        self.show_popup("Configuration", f"Your information has been updated successfully"
+                                         f"\n\nUsername: {self.username}\nAge: {self.age}\nLanguage Level: {self.language_level}")
+        self.stop()
+
+    @staticmethod
+    def _parse_language_level(input_str):
+        """Parse and validate the language level input."""
+        try:
+            return EnglishLanguageLevel[input_str].value
+        except KeyError:
+            return EnglishLanguageLevel.NA.value
+
+    @staticmethod
+    def _parse_age(input_str):
+        """Parse and validate the language level input."""
+        try:
+            return int(input_str)
+        except TypeError:
+            return -1
+
+    @staticmethod
+    def limit_username_length(instance):
+        if len(instance.text) > 60:
+            instance.text = instance[:60]
+
+    @staticmethod
+    def age_input_filter(value, from_undo):
+        return value if value.isdigit() and 0 <= int(value) <= 100 else ''
+
+    @staticmethod
+    def validate_age_input(instance, value):
+        if value:
+            instance.text = str(min(100, max(0, int(value))))
+
+    def attempt_submit(self, instance):
+        username_condition = len(self.username_input.text.strip()) > 3
+        age_condition = self.age_input.text.strip()
+        language_level_condition = self.language_level_spinner.text not in ['Select Language Level', 'Not provided']
+
+        fields_filled = sum(bool(field) for field in [username_condition, age_condition, language_level_condition])
+
+        if 0 < fields_filled < 3:
+            message = "Please ensure all fields are filled:\n"
+            if not username_condition:
+                message += "- Username is required.\n"
+            if not age_condition:
+                message += "- Age is required.\n"
+            if language_level_condition == 'Select Language Level':
+                message += "- Please select your language level."
+
+            self.show_popup("Incomplete Submission", message)
+        else:
+            self.submit_user()
+
+    @staticmethod
+    def show_popup(title, message):
+        content = BoxLayout(orientation='vertical', spacing=10)
+        content.add_widget(Label(text=message, font_size='18sp', markup=True))
+        close_btn = Button(text='Close', size_hint=(1, None), height=50)
+        popup = Popup(title=title, content=content, size_hint=(None, None), size=(400, 200))
+        close_btn.bind(on_press=popup.dismiss)
+        content.add_widget(close_btn)
+        popup.open()
+
+
+if __name__ == '__main__':
+    user_information_app = UserInformationApp()
+    user_information_app.run()

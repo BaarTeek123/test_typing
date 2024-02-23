@@ -18,7 +18,6 @@ class FileWatcher:
         self.directory_path = directory_path
         self.thread = threading.Thread(target=self.run, daemon=True)
 
-
     def start(self):
         self.thread.start()
 
@@ -26,7 +25,8 @@ class FileWatcher:
         while True:
             try:
                 # Get all file names in the directory
-                filenames = [filename for filename in listdir(self.directory_path) if isfile(join(self.directory_path, filename))]
+                filenames = [filename for filename in listdir(self.directory_path) if
+                             isfile(join(self.directory_path, filename))]
                 # Sort filenames as strings, which works because of the timestamp format
                 filenames.sort()
 
@@ -44,5 +44,5 @@ class FileWatcher:
                             remove(file_path)
                             config.LOGGER.debug(f"File {filename} processed and removed.")
             except Exception as e:
-                config.LOGGER.debug(f"Error in FileWatcher: {e}")
+                config.LOGGER.error(f"Error in FileWatcher: {e}")
             sleep(5)
