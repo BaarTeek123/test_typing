@@ -38,6 +38,7 @@ class Config:
     POPUP_SIZE = (500, 400)
     USERNAME: str = getlogin()
     AGE: int = 20
+    TIME_LIMIT: int = 180
     LANGUAGE_LEVEL: str = EnglishLanguageLevel.NA.value
     DEFAULT_USERNAME: str = str(uuid4())
     GDPR_CLAUSE = SOURCE_PATH / 'gdpr_clause.txt'

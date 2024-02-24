@@ -9,13 +9,13 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 
-from kivy.config import Config as KivyConfig
+# from kivy.config import Config as KivyConfig
 
 from Config import config, EnglishLanguageLevel
 
-KivyConfig.set('graphics', 'width', config.WIDTH)
-KivyConfig.set('graphics', 'height', config.HEIGHT)
-KivyConfig.write()
+# KivyConfig.set('graphics', 'width', config.WIDTH)
+# KivyConfig.set('graphics', 'height', config.HEIGHT)
+# KivyConfig.write()
 
 
 class UserInformationApp(App):
@@ -92,7 +92,7 @@ class UserInformationApp(App):
             height=50,
             font_size='18sp',
             on_press=self.skip_update,
-            # background_color=(0, 0.5, 0.5, 1)
+            background_color=(0.878, 0.066, 0.372, 1)
         )
 
         # Submit button
@@ -176,12 +176,12 @@ class UserInformationApp(App):
         fields_filled = sum(bool(field) for field in [username_condition, age_condition, language_level_condition])
 
         if 0 < fields_filled < 3:
-            message = "Please ensure all fields are filled:\n"
+            message = "Please ensure all fields are filled:\n\n"
             if not username_condition:
                 message += "- Username is required.\n"
             if not age_condition:
                 message += "- Age is required.\n"
-            if language_level_condition == 'Select Language Level':
+            if not language_level_condition:
                 message += "- Please select your language level."
 
             self.show_popup("Incomplete Submission", message)
@@ -192,8 +192,9 @@ class UserInformationApp(App):
     def show_popup(self, title, message, if_close = False):
         content = BoxLayout(orientation='vertical', spacing=10)
         content.add_widget(Label(text=message, font_size='18sp', markup=True))
-        close_btn = Button(text='Close', size_hint=(1, None), height=50)
-        popup = Popup(title=title, content=content, size_hint=(None, None), size=config.POPUP_SIZE)
+        close_btn = Button(text='Close', size_hint=(1, None), height=50, font_size='18sp')
+        popup = Popup(title=title, content=content, size_hint=(None, None), size=config.POPUP_SIZE,
+                      auto_dismiss=False)
         if if_close:
             close_btn.bind(on_press=self.stop)
         else:

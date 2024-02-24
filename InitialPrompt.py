@@ -54,7 +54,11 @@ class GDPRClause(App):
         btn_layout.add_widget(disagree_btn)
 
         content.add_widget(btn_layout)
-        self.initial_popup = Popup(title="Confirmation", content=content, size_hint=(None, None), size=config.POPUP_SIZE)
+        self.initial_popup = Popup(title="Confirmation",
+                                   content=content,
+                                   size_hint=(None, None),
+                                   auto_dismiss=False,
+                                   size=config.POPUP_SIZE)
         self.initial_popup.open()
 
     def _on_agree(self, instance):

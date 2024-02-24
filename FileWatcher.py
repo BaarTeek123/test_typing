@@ -27,7 +27,6 @@ class FileWatcher:
                 # Get all file names in the directory
                 filenames = [filename for filename in listdir(self.directory_path) if
                              isfile(join(self.directory_path, filename))]
-                # Sort filenames as strings, which works because of the timestamp format
                 filenames.sort()
 
                 for filename in filenames:
