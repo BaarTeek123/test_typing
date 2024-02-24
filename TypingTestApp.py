@@ -56,24 +56,39 @@ class TypingTestApp(App):
         Clock.schedule_interval(self._check_time_limit, 1)
         return self.root
 
+
+
+    def mail_label(self):
+        return Label(
+            text=f"Contact e-mail [b][color=5bcefa]{config.CONTACT_EMAIL}[/color][/b]. \n",
+            size_hint=(1, None),
+            halign="center",
+            valign="top",
+            font_size='18sp',
+            markup=True
+        )
     def _create_layout(self):
         """Creates and returns the main layout for the app."""
         layout = BoxLayout(orientation='vertical', padding=5, spacing=10)
 
         self.sentence_label = self._create_readonly_text_input(self.target_sentence)
         self.input_text = self._create_editable_text_input()
-        self.submit_button = self._create_button(
+        self.input_text = self._create_editable_text_input()
+        submit_button = self._create_button(
             "Submit",
             self._submit,
-            background_color=(0.314, 0.784, 0.471, 1)
+            background_color=(0.314, 0.784, 0.471, 1),size_hint=(0.5, 1)
         )
         close_button = self._create_button(
             "Close",
             lambda x: self._confirm_quit(),
-            background_color=(0.878, 0.066, 0.372, 1)
+            background_color=(0.878, 0.066, 0.372, 1, ), size_hint=(0.5, 1)
         )
+        buttons_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, None), height=50)
+        buttons_layout.add_widget(submit_button)
+        buttons_layout.add_widget(close_button)
 
-        for widget in [self.sentence_label, self.input_text, self.submit_button, close_button]:
+        for widget in [self.sentence_label, self.input_text, buttons_layout,  self.mail_label()]:
             layout.add_widget(widget)
 
         return layout
@@ -93,7 +108,7 @@ class TypingTestApp(App):
     @staticmethod
     def _create_button(text, callback, **kwargs):
         """Creates a Button widget."""
-        button = Button(text=text, size_hint=(1, 0.1), font_size='18sp', **kwargs)
+        button = Button(text=text, font_size='18sp', **kwargs)
         button.bind(on_press=callback)
         return button
 

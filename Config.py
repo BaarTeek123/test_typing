@@ -42,6 +42,7 @@ class Config:
     LANGUAGE_LEVEL: str = EnglishLanguageLevel.NA.value
     DEFAULT_USERNAME: str = str(uuid4())
     GDPR_CLAUSE = SOURCE_PATH / 'gdpr_clause.txt'
+    CONTACT_EMAIL = 'biometrictypingtest@gmail.com'
 
     def save_to_json(self):
         data = {f.name: getattr(self, f.name) for f in fields(self)}

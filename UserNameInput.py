@@ -8,14 +8,8 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
-
-# from kivy.config import Config as KivyConfig
-
 from Config import config, EnglishLanguageLevel
 
-# KivyConfig.set('graphics', 'width', config.WIDTH)
-# KivyConfig.set('graphics', 'height', config.HEIGHT)
-# KivyConfig.write()
 
 
 class UserInformationApp(App):
