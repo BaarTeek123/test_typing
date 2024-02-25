@@ -16,9 +16,9 @@ class Logger:
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
         # Create file handler and set level to file_level
-        fh = logging.FileHandler(file_path)
-        fh.setLevel(file_level)
-        fh.setFormatter(formatter)
+        # fh = logging.FileHandler(file_path)
+        # fh.setLevel(file_level)
+        # fh.setFormatter(formatter)
 
         # Create console handler and set level to console_level
         ch = logging.StreamHandler()
@@ -26,7 +26,7 @@ class Logger:
         ch.setFormatter(formatter)
 
         # Add handlers to the logger
-        self.logger.addHandler(fh)
+        # self.logger.addHandler(fh)
         self.logger.addHandler(ch)
 
     def get_logger(self):

@@ -13,13 +13,14 @@ KivyConfig.set('graphics', 'width', config.POPUP_SIZE[0])
 KivyConfig.set('graphics', 'height', config.POPUP_SIZE[1])
 KivyConfig.write()
 
+
 class GDPRClause(App):
     def __init__(self, message: str):
         super().__init__()
         self.message = message
 
     def build(self):
-        self.title = 'GDPR Clause'
+        self.title = 'Type Me'
         self._show_initial_prompt()
 
     def _show_initial_prompt(self):
@@ -54,7 +55,7 @@ class GDPRClause(App):
         btn_layout.add_widget(disagree_btn)
 
         content.add_widget(btn_layout)
-        self.initial_popup = Popup(title="Confirmation",
+        self.initial_popup = Popup(title="GDP clause - Confirmation",
                                    content=content,
                                    size_hint=(None, None),
                                    auto_dismiss=False,

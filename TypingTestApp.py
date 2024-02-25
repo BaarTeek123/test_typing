@@ -1,6 +1,7 @@
 import json
 import time
 from datetime import datetime
+from os.path import join
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -18,8 +19,9 @@ from InitialPrompt import GDPRClause
 from RealTimeListener import RealTimeKeyListener
 from UserNameInput import UserInformationApp
 from utils import generate_sentence, NoPasteTextInput
+from Levenshtein import distance
 
-#  TO DO: fix restarting test
+
 
 KivyConfig.set('graphics', 'width', config.WIDTH)
 KivyConfig.set('graphics', 'height', config.HEIGHT)
@@ -52,11 +54,10 @@ class TypingTestApp(App):
         self.key_listener = RealTimeKeyListener()
         self.root = self._create_layout()
         self.input_text.bind(text=self.on_input_text_change)
+        self.title='Type Me'
         Window.bind(on_resize=self._adjust_font_size)
         Clock.schedule_interval(self._check_time_limit, 1)
         return self.root
-
-
 
     def mail_label(self):
         return Label(
@@ -67,6 +68,7 @@ class TypingTestApp(App):
             font_size='18sp',
             markup=True
         )
+
     def _create_layout(self):
         """Creates and returns the main layout for the app."""
         layout = BoxLayout(orientation='vertical', padding=5, spacing=10)
@@ -74,21 +76,21 @@ class TypingTestApp(App):
         self.sentence_label = self._create_readonly_text_input(self.target_sentence)
         self.input_text = self._create_editable_text_input()
         self.input_text = self._create_editable_text_input()
-        submit_button = self._create_button(
+        self.submit_button = self._create_button(
             "Submit",
             self._submit,
-            background_color=(0.314, 0.784, 0.471, 1),size_hint=(0.5, 1)
+            background_color=(0.314, 0.784, 0.471, 1), size_hint=(0.5, 1)
         )
         close_button = self._create_button(
             "Close",
             lambda x: self._confirm_quit(),
-            background_color=(0.878, 0.066, 0.372, 1, ), size_hint=(0.5, 1)
+            background_color=(0.878, 0.066, 0.372, 1,), size_hint=(0.5, 1)
         )
         buttons_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, None), height=50)
-        buttons_layout.add_widget(submit_button)
+        buttons_layout.add_widget(self.submit_button)
         buttons_layout.add_widget(close_button)
 
-        for widget in [self.sentence_label, self.input_text, buttons_layout,  self.mail_label()]:
+        for widget in [self.sentence_label, self.input_text, buttons_layout, self.mail_label()]:
             layout.add_widget(widget)
 
         return layout
@@ -171,8 +173,10 @@ class TypingTestApp(App):
             "language_proficiency": config.LANGUAGE_LEVEL,
             "original_sentence": self.target_sentence,
             "input_sentence": input_sentence if isinstance(input_sentence, str) else "",
-            "logger_sentence": self.key_listener.get_sentence() if isinstance(self.key_listener.get_sentence(), str) else "",
-            "logger_keys": self.key_listener.get_pressed_keys() if isinstance(self.key_listener.get_pressed_keys(), list) else [],
+            "logger_sentence": self.key_listener.get_sentence() if isinstance(self.key_listener.get_sentence(),
+                                                                              str) else "",
+            "logger_keys": self.key_listener.get_pressed_keys() if isinstance(self.key_listener.get_pressed_keys(),
+                                                                              list) else [],
             'elapsed_time': float(elapsed_time)
         }
         self._write_results_to_file(results)
@@ -192,7 +196,8 @@ class TypingTestApp(App):
         """Writes the results to a file."""
         try:
             if len(result['input_sentence'].strip()) > len(self.target_sentence) // 3:
-                with open(config.OUT_PATH / f"{config.USERNAME}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json", mode='w+') as f:
+                with open(join(config.OUT_PATH, f"{config.USERNAME}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"),
+                          mode='w+') as f:
                     json.dump(result, f)
         except IOError as e:
             config.LOGGER.error(f"File write error: {e}")
@@ -217,26 +222,26 @@ class TypingTestApp(App):
         self.key_listener.clean_up()
         Clock.schedule_once(lambda dt: setattr(self.input_text, 'focus', True), 0.5)
 
-    def _check_time_limit(self, dt, outtime=config.TIME_LIMIT):
+    def _check_time_limit(self, dt, maxtime=config.TIME_LIMIT):
         """Checks if the typing duration has exceeded 2 minutes."""
-        if time.time() - self.last_interaction_time > outtime and not self.stopped:
+        if time.time() - self.last_interaction_time > maxtime and not self.stopped:
             self.stopped = True
-            self._reset_test_with_prompt(outtime)
+            self._reset_test_with_prompt(maxtime)
 
-    def _reset_test_with_prompt(self, outtime):
+    def _reset_test_with_prompt(self, maxtime):
         """Resets the test with a prompt to the user."""
         self.dismiss_popup()  # Ensure any existing popup is closed
         message_label = Label(
-            text=f"{outtime} seconds without any action exceeded, restarting test.",
+            text=f"{maxtime} seconds without any action exceeded, restarting test.",
             font_size='18sp',
         )
         layout = BoxLayout(orientation='vertical', spacing=10)
-
 
         def on_confirm(instance=None):
             self.popup.dismiss()  # Dismiss the popup
             self.stopped = False  # Set stopped to False
             self._reset_test()  # Call reset_test
+
         self._reset_test()
 
         confirm_btn = Button(text="Confirm", size_hint=(1, 0.2),
@@ -255,28 +260,21 @@ class TypingTestApp(App):
         self.popup.open()
 
     def _calculate_metrics(self, input_sentence):
-        """Calculates typing accuracy and words per minute."""
         if input_sentence is None or len(input_sentence) == 0:
             return {
-                "accuracy": "No text detected",
-                "time_elapsed": "No text detected",
-                "total_words": "No text detected"
-        }
+                "levenshtein_distance": "No text detected",
+                "time_elapsed": 0.0,
+            }
         time_elapsed = time.time() - self.start_time
-        total_words = len(self.target_sentence.split()) if input_sentence else None
-        correct_chars = sum(1 for inp, target in zip(input_sentence, self.target_sentence) if inp == target) if input_sentence else None
-        accuracy = (correct_chars / max(len(self.target_sentence), 1)) * 100
-
         return {
-            "accuracy": accuracy,
-            "time_elapsed": time_elapsed,
-            "total_words": total_words
+            "levenshtein_distance": distance(input_sentence, self.target_sentence),
+            "time_elapsed": round(time_elapsed, 2),
         }
 
     def _show_results(self, results):
         """Displays the typing test results in a popup."""
         content = BoxLayout(orientation='vertical')
-        message = f"Results:\nAccuracy: {results['accuracy']:.2f}%\nTime: {results['time_elapsed']:.2f} seconds"
+        message = f"Results:\nLevenshtein distance: {results['levenshtein_distance']}\nTime: {results['time_elapsed']} seconds"
         content.add_widget(Label(text=message))
 
         close_btn = Button(text="Close", on_press=lambda x: self.dismiss_popup())

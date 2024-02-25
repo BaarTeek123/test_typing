@@ -1,14 +1,16 @@
 import os.path
-from enum import Enum
-from os import getlogin
-from pathlib import Path
-from uuid import getnode, uuid4
-from hashlib import sha256
-from logging import ERROR, DEBUG
-from logger import Logger
-from dacite import from_dict
+import sys
 from dataclasses import dataclass, fields
+from enum import Enum
 from json import dump, load
+from logging import ERROR
+from os import getlogin
+from os.path import abspath, join
+from uuid import uuid4
+
+from dacite import from_dict
+
+from logger import Logger
 
 
 class EnglishLanguageLevel(Enum):
@@ -22,16 +24,26 @@ class EnglishLanguageLevel(Enum):
     C2 = "Proficiency (C2)"
 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller
+    Source: https://stackoverflow.com/questions/31836104/pyinstaller-and-onefile-how-to-include-an-image-in-the-exe-file
+    """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = abspath(".")
+
+    return join(base_path, relative_path)
+
 @dataclass
 class Config:
     SERVER_ADDRESS = 'http://srv22.mikr.us:20304/typingtest/'
-    ROOT_PATH = Path(__file__).parent
-    SOURCE_PATH = ROOT_PATH / 'src'
-    CONFIG_FILE_PATH = SOURCE_PATH / 'config.json'
-    SENTENCES_FILE = SOURCE_PATH / 'sentences.txt'
-    OUT_PATH = ROOT_PATH / 'out'
-    OUTPUT_FILE = ROOT_PATH / 'out' / 'result.json'
-    LOGGER = Logger('MainLogger', OUT_PATH / 'log' / 'log.log',  file_level=ERROR, console_level=DEBUG).get_logger()
+    CONFIG_FILE_PATH = resource_path(join('src', 'config.json'))
+    SENTENCES_FILE = resource_path(join('src', 'sentences.txt'))
+    OUT_PATH = resource_path('out')
+    OUTPUT_FILE = resource_path(join('out', 'result.json'))
+    LOGGER = Logger('MainLogger', resource_path(join('out', 'log', 'log.log')), file_level=ERROR, console_level=ERROR).get_logger()
     FONT_FAMILY: str = "Century"
     WIDTH: int = 1000
     HEIGHT: int = 600
@@ -41,7 +53,7 @@ class Config:
     TIME_LIMIT: int = 180
     LANGUAGE_LEVEL: str = EnglishLanguageLevel.NA.value
     DEFAULT_USERNAME: str = str(uuid4())
-    GDPR_CLAUSE = SOURCE_PATH / 'gdpr_clause.txt'
+    GDPR_CLAUSE = resource_path('src/gdpr_clause.txt')
     CONTACT_EMAIL = 'biometrictypingtest@gmail.com'
 
     def save_to_json(self):
@@ -51,8 +63,8 @@ class Config:
         self.LOGGER.info(f'Configuration saved to file {self.CONFIG_FILE_PATH}')
 
 
-config = Config()
-if not os.path.isfile(Config.CONFIG_FILE_PATH):
-    config.save_to_json()
+
+if not os.path.isfile(Config().CONFIG_FILE_PATH):
+    Config().save_to_json()
 
 config = from_dict(data_class=Config, data=load(open(Config.CONFIG_FILE_PATH)))

@@ -11,7 +11,6 @@ from kivy.uix.widget import Widget
 from Config import config, EnglishLanguageLevel
 
 
-
 class UserInformationApp(App):
 
     def __init__(self):
@@ -23,8 +22,9 @@ class UserInformationApp(App):
         self.language_level = config.LANGUAGE_LEVEL
         self.age = config.AGE
 
+
     def build(self):
-        self.title = 'User Information'
+        self.title = 'Type Me - User Information'
         main_layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
 
         # Labels with formatting and text wrapping
@@ -100,12 +100,12 @@ class UserInformationApp(App):
 
         )
 
-
         buttons_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, None), height=50)
         buttons_layout.add_widget(skip_button)
         buttons_layout.add_widget(submit_button)
 
-        for widget in [welcome_label, instruction_part1, instruction_part2, Widget(size_hint_y=0.05) , self.username_input, self.age_input,
+        for widget in [welcome_label, instruction_part1, instruction_part2, Widget(size_hint_y=0.05),
+                       self.username_input, self.age_input,
                        self.language_level_spinner, Widget(size_hint_y=0.05), buttons_layout]:
             main_layout.add_widget(widget)
 
@@ -114,7 +114,9 @@ class UserInformationApp(App):
     def skip_update(self, instance):
         self.show_popup("Configuration", f"No changes made. \nUsername: [color=5bcefa]{config.USERNAME}[/color]"
                                          f"\nAge: [color=5bcefa]{config.AGE}[/color]\n"
-                                         f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]", if_close=True)
+                                         f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]",
+                        if_close=True)
+
     def submit_user(self, instance=None):
         self.username = self.username_input.text.strip()
         self.age = self.age_input.text.strip()
@@ -126,17 +128,17 @@ class UserInformationApp(App):
             config.AGE = self._parse_age(self.age)
             config.DEFAULT_USERNAME = str(uuid4())
             config.save_to_json()
-            self.show_popup("Configuration", f"Your information has been updated successfully. \nUsername: [color=5bcefa]{config.USERNAME}[/color]"
-                                         f"\nAge: [color=5bcefa]{config.AGE}[/color]\n"
-                                         f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]", if_close=True)
-        self.skip_update(None)
+            self.show_popup("Configuration",
+                            f"Your information has been updated successfully. \nUsername: [color=5bcefa]{config.USERNAME}[/color]"
+                            f"\nAge: [color=5bcefa]{config.AGE}[/color]\n"
+                            f"Language Level: [color=5bcefa]{config.LANGUAGE_LEVEL}[/color]", if_close=True)
 
 
     @staticmethod
     def _parse_language_level(input_str):
         """Parse and validate the language level input."""
         try:
-            return EnglishLanguageLevel[input_str].value
+            return input_str if input_str in [k.value for k in EnglishLanguageLevel ] else EnglishLanguageLevel.NA.value
         except KeyError:
             return EnglishLanguageLevel.NA.value
 
@@ -182,8 +184,7 @@ class UserInformationApp(App):
         else:
             self.submit_user()
 
-
-    def show_popup(self, title, message, if_close = False):
+    def show_popup(self, title, message, if_close=False):
         content = BoxLayout(orientation='vertical', spacing=10)
         content.add_widget(Label(text=message, font_size='18sp', markup=True))
         close_btn = Button(text='Close', size_hint=(1, None), height=50, font_size='18sp')
