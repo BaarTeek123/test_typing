@@ -55,7 +55,7 @@ class GDPRClause(App):
         btn_layout.add_widget(disagree_btn)
 
         content.add_widget(btn_layout)
-        self.initial_popup = Popup(title="GDP clause - Confirmation",
+        self.initial_popup = Popup(title="GDPR clause - Confirmation",
                                    content=content,
                                    size_hint=(None, None),
                                    auto_dismiss=False,
